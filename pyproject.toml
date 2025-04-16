@@ -1,6 +1,0 @@
-[project]
-name = "accesspark"
-version = "0.1.0"
-description = "A project for managing accessibility parking."
-authors = ["Siva <b.sivarajesh20@gmail.com>"]
-license = "MIT"

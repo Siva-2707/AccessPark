@@ -2,7 +2,7 @@ import requests
 import pandas as pd
 import ast
 
-def get_toronto_data():
+def get_data():
 
   # Toronto Open Data is stored in a CKAN instance. It's APIs are documented here:
   # https://docs.ckan.org/en/latest/api/

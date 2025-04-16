@@ -1,7 +1,7 @@
 import pandas as pd
 import requests
 
-def get_halifax_data():
+def get_data():
   URL = 'https://services2.arcgis.com/11XBiaBYA9Ep0yNJ/arcgis/rest/services/Accessible_Parking_Spots/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson'
   data = requests.get(URL).json()
   # print(json.dumps(data,indent=4))
