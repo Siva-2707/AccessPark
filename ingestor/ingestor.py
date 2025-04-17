@@ -21,14 +21,18 @@ def insert_df_to_db(df):
             country=safe_str(row['COUNTRY'])
         )
 
-# Get Halifax data & insert into DB
-insert_df_to_db(halifax.get_data())
 
-# Get Toronto data & insert into DB
-insert_df_to_db(toronto.get_data())
+def lambda_handler(event, context):
+    # Get Halifax data & insert into DB
+    insert_df_to_db(halifax.get_data())
 
+    # Get Toronto data & insert into DB
+    insert_df_to_db(toronto.get_data())
+    return {
+        'statusCode': 200,
+        'body': 'Data ingestion completed successfully!'
+    }
 
 if __name__ == "__main__":
-    print("Data ingested successfully.")
-
+    lambda_handler(None, None)
 
