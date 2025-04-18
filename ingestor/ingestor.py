@@ -3,6 +3,7 @@ import halifax_ingestor as halifax
 import toronto_ingestor as toronto
 import hashlib
 from util import safe_str
+from logger_config import logger
 
 db.create_database_if_not_exist()
 db.create_table_if_not_exist()
@@ -20,14 +21,19 @@ def insert_df_to_db(df):
             state=safe_str(row['STATE']),
             country=safe_str(row['COUNTRY'])
         )
+    logger.info(f"Inserted {len(df)} records into the database")
 
 
 def lambda_handler(event, context):
+    logger.info("Starting data ingestion process...")
+
     # Get Halifax data & insert into DB
     insert_df_to_db(halifax.get_data())
 
     # Get Toronto data & insert into DB
     insert_df_to_db(toronto.get_data())
+
+    logger.info("Data ingestion process completed successfully!")
     return {
         'statusCode': 200,
         'body': 'Data ingestion completed successfully!'

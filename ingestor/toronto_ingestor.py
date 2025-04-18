@@ -2,7 +2,13 @@ import requests
 import pandas as pd
 import ast
 
+import logging
+from logger_config import logger
+
+logger = logging.getLogger(__name__)
+
 def get_data():
+  logger.info("Fetching data from Toronto...")
 
   # Toronto Open Data is stored in a CKAN instance. It's APIs are documented here:
   # https://docs.ckan.org/en/latest/api/
@@ -26,7 +32,7 @@ def get_data():
             # From here, you can use the "url" attribute to download this file
 
   toronto_data = pd.read_excel(resource_metadata['result']['url'])
-  print(f'Toronto data before filtering: {len(toronto_data)}')
+  # print(f'Toronto data before filtering: {len(toronto_data)}')
   if not toronto_data.empty:
     toronto_data = toronto_data[(toronto_data['Access'].str.lower() == 'public') & (toronto_data['Handicap Parking Spaces'] > 0)]
 
@@ -36,7 +42,8 @@ def get_data():
   toronto_data['CITY'] = 'Toronto'
   toronto_data['STATE'] = 'ON'
   toronto_data['COUNTRY'] = 'Canada'
-  print(f'Toronto data after filtering: {len(toronto_data)}')
+  # print(f'Toronto data after filtering: {len(toronto_data)}')
+  logger.info(f"Fetched {len(toronto_data)} records from Toronto")
   return toronto_data
 
 def convert_to_list(coord_str):

@@ -1,5 +1,17 @@
 # VS Code
 .vscode/
+.DS_Store
+
+#Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform/
+.terraform-version
+.terraform.lock.hcl
+terraform.*
+
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

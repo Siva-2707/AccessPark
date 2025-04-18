@@ -1,7 +1,12 @@
 import pandas as pd
 import requests
+import logging
+from logger_config import logger
+
+logger = logging.getLogger(__name__)
 
 def get_data():
+  logger.info("Fetching data from Halifax...")
   URL = 'https://services2.arcgis.com/11XBiaBYA9Ep0yNJ/arcgis/rest/services/Accessible_Parking_Spots/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson'
   data = requests.get(URL).json()
   # print(json.dumps(data,indent=4))
@@ -14,4 +19,5 @@ def get_data():
   df['CITY'] = 'Halifax'
   df['STATE'] = 'NS'
   df['COUNTRY'] = 'Canada'
+  logger.info(f"Fetched {len(df)} records from Halifax")
   return df

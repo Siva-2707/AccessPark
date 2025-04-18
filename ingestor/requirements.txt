@@ -12,4 +12,22 @@ pytz==2025.2
 requests==2.32.3
 six==1.17.0
 tzdata==2025.2
-urllib3==2.4.0
+urllib3
+logging
+
+
+# certifi
+# charset-normalizer
+# dotenv
+# et_xmlfile
+# idna
+# mysql-connector-python
+# openpyxl
+# pandas
+# python-dateutil
+# python-dotenv
+# pytz
+# requests
+# six
+# tzdata
+# urllib3

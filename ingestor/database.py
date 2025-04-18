@@ -2,6 +2,10 @@ import mysql.connector
 import os
 from dotenv import load_dotenv
 load_dotenv()
+import logging
+from logger_config import logger
+
+logger = logging.getLogger(__name__)
 
 def get_connection():
     con = mysql.connector.connect(
@@ -11,6 +15,7 @@ def get_connection():
     database=os.getenv("DB_NAME"),
     port=os.getenv("DB_PORT")
     )
+    logger.info("Connected to the database")
     return con   
 
 def create_database_if_not_exist():
@@ -21,6 +26,7 @@ def create_database_if_not_exist():
             ''')
     cur.execute('USE parking')
     con.commit()
+    logger.info("Database created or already exists")
 
 def create_table_if_not_exist():
     con = get_connection()
@@ -37,6 +43,7 @@ def create_table_if_not_exist():
             country VARCHAR(100)
         )''')
     con.commit()
+    logger.info("Table created or already exists")
 
 def insert_into_accessibility_parking(record_hash, city_lot_id, name, no_of_spots, location, city, state, country):
     con = get_connection()
@@ -46,6 +53,8 @@ def insert_into_accessibility_parking(record_hash, city_lot_id, name, no_of_spot
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
     ''', (record_hash,city_lot_id, name, no_of_spots, location, city, state, country))
     con.commit()
+    logger.info(f"Inserted record with hash {record_hash} into the database")
     
 def close_connection(con):
     con.close()
+    logger.info("Database connection closed")
