@@ -22,7 +22,7 @@ def get_db():
 
 @app.get("/parking", response_model=List[ParkingSpot])
 def get_parking_spots(db: Session = Depends(get_db)):
-    records = service.get_all_parking_spots(db)
+    records = service.get_parking_spots(db)
     return [
         ParkingSpot(
             city_lot_id=record.city_lot_id,
