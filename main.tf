@@ -1,11 +1,12 @@
-# main.tf
-
+# AWS Configurations
 provider "aws" {
   region = "us-east-1"
   # access_key = #ACCESS_KEY
   # secret_key = #SECRET_KEY
   # token = #TOKEN
 }
+
+#Variable for region to use it later. 
 variable "region" {
   default = "us-east-1"
 }
@@ -27,7 +28,6 @@ resource "aws_internet_gateway" "ap_vpc_igw" {
     Group = "ap"
   }
 }
-
 
 #Creating required subnets
 resource "aws_subnet" "ap_public_subnet" {
@@ -80,7 +80,7 @@ resource "aws_route_table_association" "ap_public_rt_association" {
   route_table_id = aws_route_table.ap_public_rt.id
 }
 
-# 1. Create an Elastic IP for the NAT Gateway
+# Creating an Elastic IP for the NAT Gateway
 resource "aws_eip" "nat_eip" {
   domain = "vpc"
 }
@@ -126,10 +126,12 @@ resource "aws_s3_bucket" "lambda_bucket" {
   force_destroy = true
 }
 
+#Creating random id for bucket, making it unique. 
 resource "random_id" "bucket_id" {
   byte_length = 4
 }
 
+#Local zipping of lambda executable and uploading it into the S3 bucket.
 resource "null_resource" "zip_and_upload" {
   provisioner "local-exec" {
     command = <<EOT
@@ -178,7 +180,16 @@ resource "aws_security_group" "mysql_sg" {
   vpc_id = aws_vpc.ap_vpc.id
 }
 
-# Attach Security Group to MySQL DB
+# Subnet group for RDS
+resource "aws_db_subnet_group" "ap_rds_sng" {
+  name        = "mysql-subnet-group"
+  subnet_ids  = [aws_subnet.ap_private_subnet.id, aws_subnet.ap_private_subnet_bck.id]
+  tags = {
+    Name = "mysql-subnet-group"
+  }
+}
+
+# RDS MySQL DB with security group attached. 
 resource "aws_db_instance" "mysql_db" {
   identifier         = "myapp-db"
   allocated_storage  = 20
@@ -195,29 +206,29 @@ resource "aws_db_instance" "mysql_db" {
   vpc_security_group_ids = [aws_security_group.mysql_sg.id]
 }
 
-resource "aws_db_subnet_group" "ap_rds_sng" {
-  name        = "mysql-subnet-group"
-  subnet_ids  = [aws_subnet.ap_private_subnet.id, aws_subnet.ap_private_subnet_bck.id]
-  tags = {
-    Name = "mysql-subnet-group"
-  }
-}
-
+# Using existing IAM role for lambda.
 data "aws_iam_role" "lambda_exec_role" {
   name = "LabRole"
 }
 
+# IAM role profile to attach it to resources.
+resource "aws_iam_instance_profile" "lab_role_profile" {
+  name = "LabRoleProfile"
+  role = data.aws_iam_role.lambda_exec_role.name
+}
+
+# Security group for lambda
 resource "aws_security_group" "lambda_sg" {
   name        = "lambda-sg"
   description = "Allow Lambda to connect to RDS and receive EventBridge triggers"
   vpc_id      = aws_vpc.ap_vpc.id
 
-  # Outbound rule to connect to RDS (assume port 3306 for MySQL)
+  #Only outbound rules to connect to RDS and opensource data. 
   egress {
     from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Or more restrictive if known
+    cidr_blocks = ["0.0.0.0/0"] 
   }
 
   egress {
@@ -243,7 +254,7 @@ resource "aws_lambda_function" "ingestor" {
   function_name = "ingestorLambda"
   s3_bucket     = aws_s3_bucket.lambda_bucket.bucket
   s3_key        = "ingestor.zip"
-  handler       = "ingestor.lambda_handler"
+  handler       = "lambda_function.lambda_handler"
   runtime       = "python3.13"
   role          = data.aws_iam_role.lambda_exec_role.arn
   timeout       = 150
@@ -267,8 +278,25 @@ resource "aws_lambda_function" "ingestor" {
       DB_PASSWORD = var.db_password
     }
   }
-  # depends_on = [aws_db_instance.mysql_db]
   depends_on = [null_resource.zip_and_upload, aws_db_instance.mysql_db]
+}
+
+#Invoking lambda once for initial load.
+resource "null_resource" "invoke_lambda_once" {
+  provisioner "local-exec" {
+    command = <<EOT
+      aws lambda invoke \
+        --function-name ${aws_lambda_function.ingestor.function_name} \
+        --payload '{}' \
+        response.json
+    EOT
+  }
+
+  triggers = {
+    lambda_version = aws_lambda_function.ingestor.version
+  }
+
+  depends_on = [aws_lambda_function.ingestor]
 }
 
 # EventBridge rule to trigger Lambda weekly
@@ -277,12 +305,14 @@ resource "aws_cloudwatch_event_rule" "weekly" {
   schedule_expression = "rate(7 days)"
 }
 
+# Setting target for EventBridge.
 resource "aws_cloudwatch_event_target" "lambda_target" {
   rule      = aws_cloudwatch_event_rule.weekly.name
   target_id = "lambda-ingestor"
   arn       = aws_lambda_function.ingestor.arn
 }
 
+# Allowing necessary permission for lambda.
 resource "aws_lambda_permission" "allow_eventbridge" {
   statement_id  = "AllowExecutionFromEventBridge"
   action        = "lambda:InvokeFunction"
@@ -342,17 +372,10 @@ resource "aws_instance" "fastapi_instance" {
               EOF
 }
 
-resource "aws_iam_instance_profile" "lab_role_profile" {
-  name = "LabRoleProfile"
-  role = data.aws_iam_role.lambda_exec_role.name
-}
-
 # Output Public IP
 output "ec2_public_ip" {
   value = aws_instance.fastapi_instance.public_ip
 }
-
-# API Gateway setup placeholder (can be extended with Lambda proxy or EC2 integration)
 
 # Variables
 variable "db_username" {

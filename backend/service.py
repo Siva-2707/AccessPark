@@ -34,7 +34,7 @@ def find_coordinates_within_radius(input_coord, merged_df, radius):
     return results
 
 def get_parking_spots(db: Session):
-    records = db.query(AccessibilityParking).all()
+    return db.query(AccessibilityParking).all()
 
 def find_parking_spots_based_on_city(city: str, db: Session):
     print("Type of db: ", type(db))
